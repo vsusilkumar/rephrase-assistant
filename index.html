@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Rephrase Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #f8fafc, #e2e8f0); /* Modern gradient */
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top, allows for scrolling */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px; /* Add padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width/height */
+            transition: background 0.3s ease, color 0.3s ease;
+            overflow-y: auto; /* Enable vertical scrolling if content overflows */
+        }
+
+        .container {
+            max-width: 960px; /* Increased max-width for larger screens */
+            width: 100%;
+            background-color: #ffffff; /* bg-white */
+            padding: 24px; /* p-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            margin-top: 2rem;
+            margin-bottom: 2rem; /* Add margin at the bottom */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+            position: relative; /* Added for positioning absolute children (theme toggle) */
+        }
+
+        h1 {
+            font-size: 2rem; /* Adjusted size for responsiveness */
+            font-weight: bold; /* font-bold */
+            text-align: center;
+            color: transparent;
+            background-clip: text;
+            background-image: linear-gradient(to right, #6366f1, #8b5cf6); /* from-blue-400 to-purple-400 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            padding-right: 60px; /* Add padding to prevent overlap with toggle switch */
+            box-sizing: border-box;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem; /* py-3, px-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            font-size: 1rem; /* text-base */
+            line-height: 1.5rem; /* leading-relaxed */
+            margin-bottom: 1rem; /* mb-4 */
+            background-color: #f9fafb; /* bg-gray-50 */
+            color: #4b5563;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            box-sizing: border-box; /* Include padding and border in element's total width */
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #6366f1; /* border-blue-500 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16); /* ring-blue-500 ring-opacity-20 */
+        }
+
+        textarea {
+            min-height: 10rem; /* min-h-[10rem] */
+            resize: vertical;
+        }
+
+        .select-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+            width: 100%; /* Ensure wrapper takes full width */
+        }
+
+        .select-trigger {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            font-size: 1rem;
+            line-height: 1.5rem;
+            background-color: #f9fafb;
+            color: #4b5563;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .select-trigger:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+        }
+
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            margin-top: 0.25rem;
+            overflow: auto;
+            max-height: 200px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out, transform 0.15s ease-in-out, background-color 0.3s ease, border-color 0.3s ease;
+            width: 100%; /* Ensure options take full width */
+            box-sizing: border-box;
+        }
+
+        .select-options.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .select-item {
+            padding: 0.75rem;
+            font-size: 1rem;
+            color: #4b5563;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+            white-space: nowrap;
+            overflow: hidden; /* Prevent overflow */
+            text-overflow: ellipsis; /* Add ellipsis for long text */
+        }
+
+        .select-item:hover, .select-item.selected {
+            background-color: #6366f1;
+            color: #fff;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            justify-content: center; /* Center buttons when they are side-by-side */
+            gap: 1rem; /* Space between buttons */
+            margin-bottom: 1rem; /* Added margin below buttons */
+        }
+
+        .button {
+            /* Adjusted padding and min-width for normal size */
+            flex-grow: 0; /* Prevent buttons from growing excessively */
+            flex-shrink: 0; /* Prevent buttons from shrinking */
+            flex-basis: auto; /* Allow buttons to determine their size based on content */
+            min-width: 100px; /* Reduced minimum width further */
+            padding: 0.5rem 1rem; /* Reduced padding */
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 1rem; /* Keep font size for readability */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-sizing: border-box;
+            width: auto; /* Ensure width is auto by default */
+        }
+
+        .button-primary {
+            background-image: linear-gradient(to right, #8b5cf6, #6366f1);
+            color: #fff;
+        }
+
+        .button-primary:hover {
+            background-image: linear-gradient(to right, #7c3aed, #4f46e5);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .button-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-image: linear-gradient(to right, #8b5cf6, #6366f1); /* Keep gradient disabled state */
+        }
+
+        .button-outline {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .button-outline:hover {
+            background-color: #f9fafb;
+            color: #374151;
+        }
+
+        /* Styling for the Copy button when it's part of the button-group */
+        .button-group .copy-button {
+            position: static; /* Remove absolute positioning */
+            bottom: auto; /* Remove absolute positioning */
+            right: auto; /* Remove absolute positioning */
+            padding: 0.5rem; /* Keep padding */
+            border-radius: 0.375rem; /* Match other buttons */
+            background-color: #e5e7eb; /* Match button-icon default */
+            color: #4b5563; /* Match button-icon default */
+            backdrop-filter: none; /* Remove glass effect */
+            -webkit-backdrop-filter: none; /* Remove glass effect */
+            box-shadow: none; /* Remove shadow */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            z-index: auto; /* Remove explicit z-index */
+            border: 1px solid #d1d5db; /* Add a border like outline button */
+        }
+
+        .button-group .copy-button:hover {
+             background-color: #d1d5db; /* Match button-icon hover */
+             color: #1f2937; /* Match button-icon hover */
+             transform: none; /* Remove scale effect */
+        }
+
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+
+         .icon.large {
+             width: 24px;
+             height: 24px;
+         }
+
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .text-gray-400 {
+            color: #9ca3af;
+            transition: color 0.3s ease;
+        }
+
+        .text-green-400 {
+            color: #22c55e;
+            transition: color 0.3s ease;
+        }
+
+        /* Dark Theme Styles */
+        .dark-mode body {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .container {
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-mode .form-control {
+            background-color: #303030;
+            color: #d1d1d1;
+            border-color: #424242;
+        }
+
+        .dark-mode .select-trigger {
+            background-color: #303030;
+            color: #d1d1d1;
+            border-color: #424242;
+        }
+
+        .dark-mode .select-options {
+            background-color: #303030;
+            border-color: #424242;
+        }
+
+        .dark-mode .select-item {
+            color: #d1d1d1;
+        }
+
+        .dark-mode .select-item:hover, .dark-mode .select-item.selected {
+            background-color: #6366f1;
+            color: #fff;
+        }
+
+        .dark-mode .button-outline {
+            border-color: #424242;
+            color: #d1d1d1;
+        }
+
+        .dark-mode .button-outline:hover {
+            background-color: #424242;
+            color: #f5f5f5;
+        }
+
+        .dark-mode .button-icon {
+            background-color: #424242;
+            color: #d1d1d1;
+        }
+
+        .dark-mode .button-icon:hover {
+            background-color: #525252;
+            color: #f5f5f5;
+        }
+
+        /* Dark mode styling for the Copy button when it's part of the button-group */
+        .dark-mode .button-group .copy-button {
+             background-color: #424242; /* Match button-icon dark default */
+             color: #d1d1d1; /* Match button-icon dark default */
+             border-color: #424242; /* Match outline button dark border */
+        }
+
+        .dark-mode .button-group .copy-button:hover {
+             background-color: #525252; /* Match button-icon dark hover */
+             color: #f5f5f5; /* Match button-icon dark hover */
+        }
+
+
+        /* Theme Toggle Switch Styles */
+        .theme-switch {
+            position: absolute; /* Position relative to the container */
+            top: 15px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+            display: inline-block;
+            width: 45px; /* Width of the switch */
+            height: 25px; /* Height of the switch */
+            z-index: 20; /* Ensure toggle is above other content */
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc; /* Light theme track color */
+            transition: .4s;
+            border-radius: 25px; /* Rounded track */
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; /* Size of the thumb */
+            width: 18px; /* Size of the thumb */
+            left: 4px; /* Initial position of the thumb */
+            bottom: 3.5px; /* Initial position of the thumb */
+            background-color: white; /* Thumb color */
+            transition: .4s;
+            border-radius: 50%; /* Rounded thumb */
+        }
+
+        input:checked + .slider {
+            background-color: #6366f1; /* Dark theme track color */
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #6366f1;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px); /* Move thumb to the right */
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem; /* Slightly smaller on tablets */
+                padding-right: 50px; /* Adjust padding for smaller switch */
+            }
+
+            .button-group {
+                flex-direction: column; /* Stack buttons vertically on smaller screens */
+                gap: 0.75rem; /* Adjust gap when stacked */
+                align-items: center; /* Center items when stacked */
+            }
+
+            .button,
+            .button-group .copy-button { /* Apply stacking styles to copy button as well */
+                /* Set a fixed width when stacked */
+                width: 200px; /* Example fixed width, adjust as needed */
+                min-width: auto; /* Remove min-width constraint */
+                padding: 0.5rem 1rem; /* Further reduced padding on smaller screens */
+                 /* Remove max-width as fixed width is used */
+                max-width: none;
+                 /* Remove auto margins as align-items: center is used on group */
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .container {
+                padding: 16px; /* Smaller padding on smaller screens */
+                margin-top: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            body {
+                padding: 10px; /* Reduce body padding */
+            }
+
+            .theme-switch {
+                top: 10px; /* Adjust for smaller padding */
+                right: 10px; /* Adjust for smaller padding */
+                width: 40px; /* Smaller switch width */
+                height: 22px; /* Smaller switch height */
+            }
+
+            .theme-switch .slider:before {
+                 height: 16px; /* Smaller thumb */
+                 width: 16px; /* Smaller thumb */
+                 left: 3px; /* Adjust initial position */
+                 bottom: 3px; /* Adjust initial position */
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(18px); /* Adjust thumb movement */
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem; /* Even smaller on mobile */
+                 padding-right: 40px; /* Adjust padding */
+            }
+
+            .form-control,
+            .select-trigger,
+            .select-item {
+                font-size: 0.9rem; /* Slightly smaller font size */
+                padding: 0.6rem; /* Adjust padding */
+            }
+
+            .button,
+             .button-group .copy-button { /* Apply stacking styles to copy button as well */
+                 padding: 0.4rem 0.7rem; /* Further reduced button padding */
+                 font-size: 0.9rem; /* Adjust button font size */
+                 /* Set a fixed width for very small screens */
+                 width: 180px; /* Example fixed width, adjust as needed */
+                 max-width: none; /* Remove max-width */
+                 margin-left: 0;
+                 margin-right: 0;
+            }
+
+             .copy-button {
+                bottom: 0.5rem;
+                right: 0.5rem;
+                padding: 0.4rem;
+            }
+             .theme-switch {
+                 width: 35px; /* Even smaller switch width */
+                 height: 20px; /* Even smaller switch height */
+             }
+
+             .theme-switch .slider:before {
+                 height: 14px; /* Even smaller thumb */
+                 width: 14px; /* Even smaller thumb */
+                 left: 3px; /* Adjust initial position */
+                 bottom: 3px; /* Adjust initial position */
+             }
+
+              input:checked + .slider:before {
+                transform: translateX(15px); /* Adjust thumb movement */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container">
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+
+        <h1>Smart Rephrase Assistant</h1>
+
+        <div class="select-wrapper">
+            <div class="select-trigger">
+                <span>Select a template</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 011.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="select-options">
+                <div class="select-item" data-value="Claims Investigation">Claims Investigation</div>
+                <div class="select-item" data-value="Membership Update">Membership Update</div>
+                <div class="select-item" data-value="Case Management">Case Management</div>
+                <div class="select-item" data-value="Account Reconciliation">Account Reconciliation</div>
+                <div class="select-item" data-value="Authorization Tracking">Authorization Tracking</div>
+            </div>
+        </div>
+
+        <textarea id="userText" placeholder="Enter your text here..." class="form-control"></textarea>
+
+        <div class="button-group">
+            <button id="rephraseButton" class="button button-primary" disabled>
+                <span>Rephrase</span>
+                <svg id="refreshIcon" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+            <button id="resetButton" class="button button-outline">Reset</button>
+            <button id="copyButton" class="button button-outline copy-button" title="Copy to Clipboard">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 4h13v16H8V4zm-3 4H4v12h12v-1H5V8z"/>
+                </svg>
+                 <span>Copy</span> </button>
+        </div>
+        <br/>
+        <textarea id="rephrasedText" placeholder="Rephrased text will appear here..." class="form-control" readonly></textarea>
+
+
+        <p class="text-gray-400 text-sm mt-4">This widget uses the OpenAI API.</p>
+        <p id="electronInfo" class="text-green-400 text-sm mt-2"></p>
+    </div>
+
+    <script>
+        // !!! IMPORTANT !!!
+        // For a real application you intend to distribute,
+        // hardcoding the API key here is NOT secure.
+        // Consider fetching it from a secure server or using
+        // environment variables in the Electron main process
+        // and passing it securely to the renderer.
+        const OPENAI_API_KEY = "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"; // Replace with your actual API key
+
+        // Use an object for templates: key = label, value = full text
+        const TEMPLATE_DATA = {
+            "Claims Investigation": "Reviewed claim details and confirmed provider eligibility and member coverage. Noted a discrepancy in coding and routed the claim to the appropriate team for review. Notified relevant stakeholders. Monitoring for updates from the provider and claim processing team",
+            "Membership Update": "Verified member enrollment and demographic information. Identified inconsistencies with group assignment and corrected the records based on validated source data. Communicated updates internally and confirmed changes are reflected in the system.",
+            "Case Management": "Reviewed active case related to a member grievance regarding service denial. Coordinated with Utilization Management and Medical Review to ensure appropriate documentation is in place. Member has been informed of the current status and expected resolution timeline.",
+            "Account Reconciliation": "Completed audit of group account records. Identified discrepancies related to retroactive termination and premium billing. Collaborated with Enrollment and Finance to initiate corrections. Follow-up scheduled to confirm adjustment reflects in the next billing cycle.",
+            "Authorization Tracking": "Validated incoming authorization request for medical services. Confirmed service alignment with member benefits and escalated for clinical review. Communicated with provider regarding turnaround time and next steps. Monitoring until decision is posted.",
+        };
+
+        // You can get the list of labels (keys) from the object if needed, e.g., Object.keys(TEMPLATE_DATA)
+        // But your HTML already lists them in data-value attributes, which is used by the dropdown.
+
+        let selectTrigger;
+        let selectOptions;
+        let selectItems;
+        let userTextarea;
+        let rephraseButton;
+        let resetButton;
+        let rephrasedTextarea;
+        let copyButton;
+        let refreshIcon;
+        let electronInfo; // Keep this if you still want to display "Running in Electron"
+        let themeToggleCheckbox;
+        let body;
+
+        // State variable to hold the KEY (label) of the selected template
+        let selectedTemplateLabel = null;
+
+        // isElectron is no longer strictly needed for logic due to preload script
+        // but can be kept for display purposes if desired.
+        let isElectron = typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize DOM elements
+            selectTrigger = document.querySelector(".select-trigger");
+            selectOptions = document.querySelector(".select-options");
+            selectItems = document.querySelectorAll(".select-item");
+            userTextarea = document.getElementById("userText");
+            rephraseButton = document.getElementById("rephraseButton");
+            resetButton = document.getElementById("resetButton");
+            rephrasedTextarea = document.getElementById("rephrasedText");
+            copyButton = document.getElementById("copyButton");
+            refreshIcon = document.getElementById("refreshIcon");
+            electronInfo = document.getElementById("electronInfo"); // Element to display Electron status
+            themeToggleCheckbox = document.getElementById("themeToggle");
+            body = document.body;
+
+            // Display Electron status if running in Electron
+            if (isElectron) {
+                electronInfo.textContent = "Running in Electron";
+            } else {
+                 // Optional: hide the electronInfo paragraph if not in Electron
+                 if (electronInfo) electronInfo.style.display = 'none';
+            }
+
+
+            // Set initial text for the select trigger and initialize state
+            selectTrigger.querySelector("span").textContent = "Select a template";
+            selectedTemplateLabel = null; // Ensure state is null initially
+
+            // Event listeners
+            selectTrigger.addEventListener("click", () => {
+                selectOptions.classList.toggle("show");
+            });
+
+            selectItems.forEach((item) => {
+                item.addEventListener("click", () => {
+                    const label = item.dataset.value; // Get the label (key) from the data-value attribute
+                    selectTrigger.querySelector("span").textContent = label; // Update the displayed text
+                    selectedTemplateLabel = label; // Update the state variable with the label
+                    selectOptions.classList.remove("show");
+                    console.log("Template label selected:", selectedTemplateLabel); // Optional: Log the selected label
+                    // Enable rephrase button if there's text AND a template label is selected
+                     rephraseButton.disabled = !userTextarea.value.trim() || selectedTemplateLabel === null;
+                });
+            });
+
+            document.addEventListener("click", (event) => {
+                if (!selectOptions.contains(event.target) && !selectTrigger.contains(event.target)) {
+                    selectOptions.classList.remove("show");
+                }
+            });
+
+            userTextarea.addEventListener("input", () => {
+                 // Enable rephrase button only if there's text AND a template label is selected
+                 rephraseButton.disabled = !userTextarea.value.trim() || selectedTemplateLabel === null;
+            });
+
+            rephraseButton.addEventListener("click", () => {
+                handleRephrase();
+            });
+
+            resetButton.addEventListener("click", () => {
+                userTextarea.value = "";
+                rephrasedTextarea.value = "";
+                // Reset select trigger text and state variable
+                selectTrigger.querySelector("span").textContent = "Select a template";
+                selectedTemplateLabel = null; // Reset state variable
+                rephraseButton.disabled = true; // Disable button after reset
+            });
+
+            copyButton.addEventListener("click", () => {
+                handleCopy();
+            });
+
+            // Use the 'change' event for the checkbox
+            themeToggleCheckbox.addEventListener("change", () => {
+                toggleDarkMode(themeToggleCheckbox.checked);
+            });
+
+            //check for system preference and set initial state
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
+                themeToggleCheckbox.checked = true; // Set checkbox state
+                toggleDarkMode(true); // Apply dark mode initially
+            } else {
+                 themeToggleCheckbox.checked = false; // Ensure checkbox is unchecked initially
+                 toggleDarkMode(false); // Apply light mode initially
+            }
+
+            // Set initial state of rephrase button on page load
+            // Button should be disabled initially as no template label is selected
+            rephraseButton.disabled = true; // Disable on load
+
+        });
+
+
+        function toggleDarkMode(isDark) {
+            body.classList.toggle('dark-mode', isDark);
+        }
+
+
+        async function handleRephrase() {
+            if (!userTextarea.value.trim()) {
+                alert("Please enter text to rephrase.");
+                return;
+            }
+
+            if (!OPENAI_API_KEY) {
+                alert("OpenAI API key is missing. Please set the OPENAI_API_KEY.");
+                console.error("OpenAI API key is missing. Please set the OPENAI_API_KEY.");
+                return;
+            }
+
+            // Get the selected LABEL from the state variable
+            const currentSelectedLabel = selectedTemplateLabel;
+
+            // Validate: Check if a label has been selected AND if that label exists as a key in TEMPLATE_DATA
+            const templateText = TEMPLATE_DATA[currentSelectedLabel]; // Look up the full text using the label
+
+            if (!currentSelectedLabel || templateText === undefined) { // Check if label is null/empty OR if lookup failed
+                 console.error("Invalid template selected. Selected label:", currentSelectedLabel, "Lookup result:", templateText);
+                 alert("Please select a valid template.");
+                 setLoading(false);
+                 return;
+            }
+
+            setLoading(true);
+            rephrasedTextarea.value = "";
+
+            // Use BOTH the label and the full template text in the prompt for better context
+            // Added instruction to provide detail based on the template even if user input is brief
+            const prompt = `Given the following example text:\n${templateText}\n\nRephrase the user text below, maintaining a similar style and tone suitable for "${currentSelectedLabel}" context. Provide a detailed response based on the context and example template, even if the user text is brief or contains minimal notes:\n${userTextarea.value}`;
+
+
+            try {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini", // Or your preferred model
+                        messages: [
+                            { role: "user", content: prompt }
+                        ],
+                         max_tokens: 500, // Increased max tokens to accommodate longer prompts/responses
+                        temperature: 0.7,
+                    }),
+                });
+
+                if (!response.ok) {
+                    let errorText = "Unknown error";
+                    try {
+                        errorText = await response.text();
+                    } catch (e) {
+                        console.error("Failed to parse error response:", e);
+                        errorText = "Failed to parse error response";
+                    }
+                    const errorMessage = `OpenAI API error: ${response.status} - ${errorText}`;
+                    console.error(errorMessage);
+                    alert(errorMessage);
+                    throw new Error(errorMessage);
+                }
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    const text = await response.text();
+                    console.error("Unexpected content type:", contentType, "Response:", text);
+                    const errorMsg = `Unexpected content type: ${contentType}. Expected application/json. Response: ${text}`;
+                    alert(errorMsg);
+                    throw new Error(errorMsg);
+                }
+                const data = await response.json();
+
+                if (!data.choices || data.choices.length === 0) {
+                    const errorMessage = "OpenAI API returned an empty response or an unexpected format.";
+                     console.error(errorMessage, data);
+                     alert(errorMessage);
+                    throw new Error(errorMessage);
+                }
+
+                const rephrasedText = data.choices[0]?.message?.content?.trim();
+                if (!rephrasedText) {
+                    const errorMessage = "OpenAI API returned no rephrased text content.";
+                     console.error(errorMessage, data);
+                     alert(errorMessage);
+                    throw new Error(errorMessage);
+                }
+
+                rephrasedTextarea.value = rephrasedText;
+
+            } catch (error) {
+                alert(`Error: ${error.message || "Failed to rephrase text."}`);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Helper function for visual feedback (used by handleCopy)
+        function showCopySuccessFeedback() {
+             const buttonTextSpan = copyButton.querySelector("span");
+             const originalText = buttonTextSpan ? buttonTextSpan.textContent : '';
+
+             if (buttonTextSpan) {
+                 buttonTextSpan.textContent = 'Copied!';
+             }
+             const iconSvg = copyButton.querySelector('svg');
+             if (iconSvg) {
+                iconSvg.style.display = 'none'; // Hide the copy icon
+             }
+
+             // Temporarily change button appearance
+             copyButton.style.backgroundColor = '#22c55e'; // Green background
+             copyButton.style.color = '#fff'; // White text
+             copyButton.style.borderColor = '#15803d'; // Darker green border
+
+
+             setTimeout(() => {
+                 // Restore original content and appearance
+                 if (buttonTextSpan) {
+                      buttonTextSpan.textContent = originalText;
+                 }
+                  if (iconSvg) {
+                       iconSvg.style.display = ''; // Show the icon again
+                  }
+                 copyButton.style.backgroundColor = ''; // Reset background
+                 copyButton.style.color = ''; // Reset text color
+                 copyButton.style.borderColor = ''; // Reset border color
+
+                 // Re-apply specific class styles if needed
+                  copyButton.classList.add('button-outline', 'copy-button'); // Ensure correct classes are back
+
+
+             }, 2000); // Show "Copied!" for 2 seconds
+         }
+
+
+         function handleCopy() {
+            if (!rephrasedTextarea.value) {
+                alert("Nothing to copy.");
+                return;
+            }
+
+            // *** ONLY attempt to use the Electron API path for testing ***
+            if (typeof window.electronAPI !== 'undefined' && window.electronAPI.copyToClipboard) {
+                console.log("Attempting copy using ONLY Electron API for testing.");
+                try {
+                     // Call the exposed Electron clipboard function
+                     window.electronAPI.copyToClipboard(rephrasedTextarea.value);
+                     console.log("Copy initiated successfully via Electron API.");
+                     // Show feedback if the call completed without an immediate error
+                     showCopySuccessFeedback();
+                } catch (e) {
+                     // Catch potential synchronous errors during the API call
+                     console.error("Error during Electron API copy call:", e);
+                     alert("Failed to copy (Electron API error). Check console for details.");
+                }
+            } else {
+                // If the Electron API is not available at all
+                console.error("Electron API (window.electronAPI.copyToClipboard) is NOT available in this environment.");
+                alert("Electron Clipboard API not available.");
+            }
+
+            // *** Remove or comment out the entire else if (navigator.clipboard) block below this for this test ***
+            // *** Do NOT have the fallback logic during this specific test ***
+        }
+
+        // Ensure the showCopySuccessFeedback function is still defined below this!
+        // function showCopySuccessFeedback() { ... }
+
+
+        function setLoading(isLoading) {
+            const buttonTextSpan = rephraseButton.querySelector("span"); // Get the span element
+
+            // Button is disabled if loading, or if no text OR no template label is selected
+            rephraseButton.disabled = isLoading || !userTextarea.value.trim() || selectedTemplateLabel === null;
+            resetButton.disabled = isLoading;
+            copyButton.disabled = isLoading || !rephrasedTextarea.value; // Disable copy if loading or no rephrased text
+
+            if (isLoading) {
+                 if (buttonTextSpan) {
+                    buttonTextSpan.textContent = "Processing...";
+                }
+                if (refreshIcon) {
+                    refreshIcon.classList.remove("hidden");
+                } else {
+                    console.warn("refreshIcon is null in setLoading(true)");
+                }
+            } else {
+                 if (buttonTextSpan) {
+                    buttonTextSpan.textContent = "Rephrase";
+                }
+                if (refreshIcon) {
+                    refreshIcon.classList.add("hidden");
+                } else {
+                    console.warn("refreshIcon is null in setLoading(false)");
+                }
+            }
+        }
+
+        // Add an event listener to initially check if the rephrase button should be enabled
+        // This runs after DOMContentLoaded
+         window.addEventListener('load', () => {
+             // Disable button on load as no template label is initially selected
+             rephraseButton.disabled = true; // Correct initial state
+         });
+
+    </script>
+</body>
+</html>
